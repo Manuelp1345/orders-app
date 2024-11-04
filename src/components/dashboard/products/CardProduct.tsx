@@ -81,7 +81,11 @@ const CardProduct = ({
         </Typography>
       </CardContent>
       <CardActions>
-        <EditProductModal setProducts={setProducts} product={product} />
+        <EditProductModal
+          disabled={disableButtons}
+          setProducts={setProducts}
+          product={product}
+        />
         <Button
           disabled={disableButtons}
           size="small"

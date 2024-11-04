@@ -31,6 +31,7 @@ const OrderSchema: Schema = new Schema({
     enum: ["pending", "completed", "cancelled"],
     default: "pending",
   },
+  stripeSessionId: { type: String },
   isPaid: { type: Boolean, required: true, default: false },
 });
 

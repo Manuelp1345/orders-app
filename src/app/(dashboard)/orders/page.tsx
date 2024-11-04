@@ -21,17 +21,20 @@ import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout,
 } from "@stripe/react-stripe-js";
+import { useSearchParams } from "next/navigation";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 );
 
 const OrdersPage: React.FC = () => {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("session_id");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
   const [newOrder, setNewOrder] = useState({
-    products: [] as { product: string; quantity: number }[],
+    products: [] as { id: string; product: string; quantity: number }[],
     date: "",
     status: "completed",
     isPaid: true,
@@ -87,13 +90,32 @@ const OrdersPage: React.FC = () => {
 
     fetchOrders();
     fetchProducts();
+
+    const fetchOrdersStripe = async () => {
+      try {
+        const response = await fetch(`/api/checkout_sessions/${sessionId}`);
+        fetchOrders();
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      }
+    };
+    if (sessionId) {
+      fetchOrdersStripe();
+    }
   }, []);
 
-  const handleProductChange = (productId: string, checked: boolean) => {
+  const handleProductChange = (
+    id: string,
+    productId: string,
+    checked: boolean
+  ) => {
     if (checked) {
       setNewOrder({
         ...newOrder,
-        products: [...newOrder.products, { product: productId, quantity: 1 }],
+        products: [
+          ...newOrder.products,
+          { id: id, product: productId, quantity: 1 },
+        ],
       });
     } else {
       setNewOrder({
@@ -110,31 +132,6 @@ const OrdersPage: React.FC = () => {
         p.product === productId ? { ...p, quantity } : p
       ),
     });
-  };
-
-  const handleCreateOrder = async () => {
-    try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newOrder),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setOrders([...orders, data.data]);
-        setNewOrder({
-          products: [],
-          date: "",
-          status: "completed",
-          isPaid: true,
-        });
-        handleClose();
-      }
-    } catch (error) {
-      console.error("Error creating order:", error);
-    }
   };
 
   useEffect(() => {
@@ -232,6 +229,7 @@ const OrdersPage: React.FC = () => {
                         )}
                         onChange={(e) =>
                           handleProductChange(
+                            product._id,
                             product.stripePriceId,
                             e.target.checked
                           )
@@ -286,9 +284,6 @@ const OrdersPage: React.FC = () => {
                     stripe={stripePromise}
                     options={{
                       fetchClientSecret,
-                      onComplete: () => {
-                        handleCreateOrder();
-                      },
                     }}
                   >
                     <EmbeddedCheckout />
