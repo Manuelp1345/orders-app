@@ -3,14 +3,11 @@ import connectToDatabase from "@/lib/connectDataBase";
 import stripe from "@/lib/connectStripe";
 import Order from "@/models/Order";
 
-export async function GET({
-  params,
-}: {
-  params: Promise<{ session_id: string }>;
-}) {
+export async function GET(req: NextRequest) {
   await connectToDatabase();
   try {
-    const { session_id } = await params;
+    const { pathname } = new URL(req.url);
+    const session_id = pathname.split("/")[3];
 
     if (!session_id) {
       return NextResponse.json({ success: false });
@@ -24,10 +21,8 @@ export async function GET({
 
     const metadata = JSON.parse(session.metadata?.products as string);
 
-    console.log(metadata);
-
     const orderData = {
-      products: metadata.map((product: any) => ({
+      products: metadata.map((product: { id: string; quantity: number }) => ({
         product: product.id,
         quantity: product.quantity,
       })),

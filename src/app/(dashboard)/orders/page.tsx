@@ -93,7 +93,7 @@ const OrdersPage: React.FC = () => {
 
     const fetchOrdersStripe = async () => {
       try {
-        const response = await fetch(`/api/checkout_sessions/${sessionId}`);
+        await fetch(`/api/checkout_sessions/${sessionId}`);
         fetchOrders();
       } catch (error) {
         console.error("Error fetching orders:", error);
@@ -102,7 +102,7 @@ const OrdersPage: React.FC = () => {
     if (sessionId) {
       fetchOrdersStripe();
     }
-  }, []);
+  }, [sessionId]);
 
   const handleProductChange = (
     id: string,
